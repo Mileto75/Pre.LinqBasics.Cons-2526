@@ -54,7 +54,7 @@ foreach(var item in gamesByPublisher)
 }
 // Projection => Select, SelectMany
 PrintLines("Projection:Select, SelectMany");
-//projectie
+//projectie = old school way
 //var gameModelsClassic = new List<GameModel>();
 //foreach(var game in games)
 //{
@@ -66,9 +66,13 @@ PrintLines("Projection:Select, SelectMany");
 //    });
 //}
 //simple selects projection
-var dlcGameTitles = games.Where(g => g.Type.Equals("DLC")).Select(g => g.Title);
+var dlcGameTitles = games
+    .Where(g => g.Type.Equals("DLC"))
+    .Select(g => g.Title);
 //simple select projection to anonymous class
-var titleAndDate = games.Where(g => g.Type.Equals("DLC")).Select(g => new {g.Title,g.Published_date });
+var titleAndDate = games
+                    .Where(g => g.Type.Equals("DLC"))
+                    .Select(g => new {g.Title,g.Published_date });
 
 var gameModels = games
     .Where(g => g.Type.Equals("DLC"))
@@ -78,32 +82,128 @@ var gameModels = games
         Type = g.Type,
         Id = g.Id
     });
+//selectmany
+PrintLines("SelectMany = Flattening");
+var platforms = games.SelectMany(g => g.PlatformsList);
+foreach(var platform in platforms.Distinct())
+{
+    Console.Write($"{platform} ");
+}
 //Aggregation => Aggregate, Average, Count , Max, Min, Sum,
+PrintLines("Aggregate: Average");
+var averageUsers = games.Average(g => g.Users);
+Console.WriteLine($"AverageUSers:{averageUsers.ToString("#.##")}");
+PrintLines("Aggregate: Sum");
+var sumOfUsers = games.Sum(g => g.Users);
+Console.WriteLine($"SumOfUSers:{sumOfUsers}");
+PrintLines("Aggregate: Max");
+var maxOfUsers = games.Max(g => g.Users);
+Console.WriteLine($"MaxOfUSers:{maxOfUsers}");
+PrintLines("Aggregate: Min");
+var minOfUsers = games.Min(g => g.Users);
+Console.WriteLine($"MinOfUSers:{minOfUsers}");
+PrintLines("Aggregate: Count");
+var countOfUsers = games.Count();
+Console.WriteLine($"NumOfUsers:{countOfUsers}");
 
-// Quantifiers => All, Any, Contains
+//example of aggregate sum
+//var result =games
+//    .Select(g => g.Users)
+//    .Aggregate((user1, user2) => { return user1 + user2; });
 
+// boolean Quantifiers => All, Any, Contains
+PrintLines("Quantifiers: All");
+if(games.All(g => g.Published_date.Year > 1975))
+{
+    Console.WriteLine("No old games in database");
+}
+else
+{
+    Console.WriteLine("Old boomer games present");
+}
+PrintLines("Quantifiers: All");
+if (games.All(g => g.Published_date.Year > 1975))
+{
+    Console.WriteLine("No old games in database");
+}
+else
+{
+    Console.WriteLine("Old boomer games present");
+}
+PrintLines("Quantifiers: Any");
+if (games.Any(g => g.Published_date.Year > 2020))
+{
+    Console.WriteLine("No old games in database");
+}
+else
+{
+    Console.WriteLine("Old boomer games present");
+}
+PrintLines("Quantifiers: Contains");
+//pointless code only as example
+var firstGame = games.First();
+if (games.Contains(firstGame))
+{
+    Console.WriteLine("Game in list");
+}
+else
+{
+    Console.WriteLine("Game not in list");
+}
 
 // Elements => ElementAt, ElementAtOrDefault,
 //          Last, LastOrDefault
+PrintLines("IndexSearch:elementAt");
+var gameAtPosition9 = games.ElementAtOrDefault(9);
+PrintGame(gameAtPosition9);
+PrintLines("IndexSearch:Last game of 2020");
+var lastGameInListFrom2020 = games.Last(g => g.Published_date.Year.Equals(2020));
+PrintGame(lastGameInListFrom2020);
 
 // Set => Distinct, Except
-
+PrintLines("Working Set:Distinct");
+var uniquePlatforms = games.Select(g => g.Platforms.Distinct());
+Console.WriteLine($"{string.Join(",",uniquePlatforms)}");
 // Partitioning => Skip, SkipWhile, Take, TakeWhile
+PrintLines("Partitioning:Skip");
+var skipFirstTenGames = games.Skip(10).Select(g => g.Title);
+Console.WriteLine($"{string.Join(",",skipFirstTenGames)}");
+PrintLines("Partitioning:Take");
+var takeFirstTenGames = games.Take(10).Select(g => g.Title);
+Console.WriteLine($"{string.Join(",", takeFirstTenGames)}");
+PrintLines("Partitioning:Skip + take = slice");
+var sliceTenGames = games.Skip(10).Take(10).Select(g => g.Title);
+Console.WriteLine($"{string.Join(",", skipFirstTenGames)}");
 
-// Conversion => AsEnumerable, AsQueryable, Cast, ToArray, ToList
-
-// Concatenation => Concat
-
+//deferred execution
+var evenNumbersEnumerable = numbers.Where(n => n%2 == 0);
+//immediate execution
+var evenNumbersList = numbers.Where(n => n%2 == 0).ToList();
+//add an even number to numbers list
+numbers.Add(240);
+//foreach also immediate execution
+foreach(var evenNumber in evenNumbersEnumerable)
+{
+    Console.Write($"{evenNumber} ");
+}
 //Deferred execution
 
-//immediate execution
+
+// Conversion => AsEnumerable, AsQueryable, Cast, ToArray, ToList
+PrintLines("Conversion: Cast");
+var castedElements = games.Select(g => g.Users).Cast<double>();
+
+// Concatenation => Concat
+//concat the games list with a list containing the first and the last game
+//pointless code for example purposes!
+games.Concat(new List<Game> { games.First(), games.Last() });
 
 //Anonymous classes
 
 //Projection to data model class
 
 //Helper methods
-IEnumerable < Game > GetGames()
+IEnumerable< Game > GetGames()
 {
     var gameRepository = new GameRepository();
     var games = gameRepository.GetGames();
